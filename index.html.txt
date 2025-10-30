@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Photo Gallery</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+<style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Roboto', sans-serif; background: #f4f4f9; color: #333; }
+    header { text-align: center; padding: 2rem; background: linear-gradient(90deg, #6a11cb, #2575fc); color: white; }
+    header h1 { font-size: 2.5rem; }
+    header p { margin-top: 0.5rem; font-size: 1.1rem; }
+    .filters { text-align: center; margin: 1rem 0; }
+    .filters button {
+        padding: 0.5rem 1rem; margin: 0.2rem; border: none; background: #2575fc;
+        color: white; border-radius: 5px; cursor: pointer; transition: 0.3s;
+    }
+    .filters button:hover, .filters button.active { background: #6a11cb; }
+    .gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; padding: 1rem 2rem 2rem 2rem; }
+    .gallery-item { position: relative; overflow: hidden; border-radius: 10px; cursor: pointer; transition: transform 0.3s; }
+    .gallery-item:hover { transform: scale(1.05); }
+    .gallery-item img { width: 100%; height: 100%; object-fit: cover; display: block; transition: opacity 0.3s; }
+    .download-btn { position: absolute; bottom: 10px; right: 10px; background: rgba(0,0,0,0.6); color: white; padding: 0.5rem 1rem; border-radius: 5px; text-decoration: none; opacity: 0; transition: opacity 0.3s; }
+    .gallery-item:hover .download-btn { opacity: 1; }
+    footer { text-align: center; padding: 1rem; background-color: #222; color: white; }
+
+    /* Lightbox Styles */
+    #lightbox { display: none; position: fixed; z-index: 1000; top:0; left:0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); justify-content: center; align-items: center; }
+    #lightbox img { max-width: 90%; max-height: 90%; border-radius: 10px; }
+    #lightbox span { position: absolute; top: 20px; right: 30px; font-size: 2rem; color: white; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<header>
+    <h1>My Photo Gallery</h1>
+    <p>Browse and download beautiful sample images</p>
+</header>
+
+<div class="filters">
+    <button class="filter-btn active" data-filter="all">All</button>
+    <button class="filter-btn" data-filter="nature">Nature</button>
+    <button class="filter-btn" data-filter="travel">Travel</button>
+    <button class="filter-btn" data-filter="portrait">Portrait</button>
+    <button class="filter-btn" data-filter="city">City</button>
+</div>
+
+<main class="gallery" id="gallery">
+    <!-- Gallery items will be loaded here dynamically -->
+</main>
+
+<!-- Lightbox -->
+<div id="lightbox">
+    <span id="close">&times;</span>
+    <img id="lightbox-img" src="" alt="Large view">
+</div>
+
+<footer>
+    &copy; 2025 My Photo Gallery. All rights reserved.
+</footer>
+
+<script>
+const gallery = document.getElementById('gallery');
+const categories = ['nature', 'travel', 'portrait', 'city'];
+let page = 1;
+const perPage = 6;
+let currentFilter = 'all';
+let isLoading = false;
+
+// Load images
+function loadImages() {
+    for (let i = 0; i < perPage; i++) {
+        const category = currentFilter === 'all'
+            ? categories[Math.floor(Math.random() * categories.length)]
+            : currentFilter;
+
+        const imgSrc = `https://source.unsplash.com/400x300/?${category}&sig=${page * perPage + i}`;
+
+        const div = document.createElement('div');
+        div.className = 'gallery-item';
+        div.setAttribute('data-category', category);
+        div.innerHTML = `
+            <img src="${imgSrc}" alt="${category}" loading="lazy">
+            <a class="download-btn" href="${imgSrc}" download>Download</a>
+        `;
+        gallery.appendChild(div);
+    }
+    page++;
+}
+
+// Infinite scroll with throttle
+window.addEventListener('scroll', () => {
+    if (isLoading) return;
+    if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 100) {
+        isLoading = true;
+        loadImages();
+        setTimeout(() => { isLoading = false; }, 500);
+    }
+});
+
+// Initial load
+loadImages();
+
+// Lightbox using event delegation
+const lightbox = document.getElementById('lightbox');
+const lightboxImg = document.getElementById('lightbox-img');
+const closeBtn = document.getElementById('close');
+
+gallery.addEventListener('click', e => {
+    if (e.target.tagName === 'IMG') {
+        lightbox.style.display = 'flex';
+        lightboxImg.src = e.target.src;
+    }
+});
+
+closeBtn.addEventListener('click', () => { lightbox.style.display = 'none'; });
+lightbox.addEventListener('click', e => { if (e.target === lightbox) lightbox.style.display = 'none'; });
+
+// Filter functionality
+const filterButtons = document.querySelectorAll('.filter-btn');
+filterButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+        filterButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        currentFilter = btn.getAttribute('data-filter');
+
+        gallery.innerHTML = ''; // Clear gallery
+        page = 1;
+        loadImages();
+    });
+});
+</script>
+
+</body>
+</html>
